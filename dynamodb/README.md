@@ -1,0 +1,3 @@
+# dynamodb
+
+Simple Lambda-DynamoDB

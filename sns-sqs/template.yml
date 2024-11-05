@@ -1,0 +1,39 @@
+# Demonstrate the use of multiple SQS queues listening to multiple SNS topics
+
+AWSTemplateFormatVersion: "2010-09-09"
+Resources: 
+  {%- for q in sns_sqs.queues %}
+  {{ q.resource_name }}:
+    Type: "AWS::SQS::Queue"
+    Properties:
+      QueueName: {{ q.queue_name }}
+      {%- if q.fifo_queue %}
+      FifoQueue: {{ q.fifo_queue }}
+      {%- endif %}
+      MessageRetentionPeriod: {{ q.message_retention_period }}
+      VisibilityTimeout: {{ q.visibility_timeout }}
+  {%- endfor %}
+
+  {%- for t in sns_sqs.topics %}
+  {{ t.resource_name }}:
+    Type: "AWS::SNS::Topic"
+    Properties:
+      DisplayName: "{{ t.display_name }}"
+      Subscription:
+        {%- for s in t.subscriptions %}
+        - Endpoint: {{ s.endpoint }}
+          Protocol: {{ s.protocol }}
+        {%- endfor %}
+  {%- endfor %}
+
+Outputs:
+  {%- for t in sns_sqs.topics %}
+  {{ t.resource_name }}Arn:
+    Description: "SNS Topic {{ t.display_name }} Arn"
+    Value: !Ref {{ t.resource_name }}
+  {%- endfor %}
+  {%- for q in sns_sqs.queues %}
+  {{ q.resource_name }}Arn:
+    Description: "SQS {{ q.queue_name }} Arn"
+    Value: !GetAtt [ {{ q.resource_name }}, "Arn" ]
+  {%- endfor %}

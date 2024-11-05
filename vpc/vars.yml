@@ -1,0 +1,38 @@
+---
+region: "us-east-2"
+vpc:
+  name: "ExampleVPC"
+  cidr: "10.0.0.0/16"
+  public_route_table:
+    name: "Public Subnets Route Table"
+  availability_zones:
+    - name: "us-east-2a"
+      resource_name: "ZoneA"
+      nat_gateway:
+        subnet: "ZoneAPublicSubnet"
+      private_route_table:
+        name: "Zone A Private Subnets Route Table"
+      subnets:
+      - cidr: "10.0.0.0/20"
+        name: "Zone A Public Subnet"
+        public: true
+        resource_name: "ZoneAPublicSubnet"
+      - cidr: "10.0.16.0/20"
+        name: "Zone A Private Subnet"
+        public: false
+        resource_name: "ZoneAPrivateSubnet"
+    - name: "us-east-2b"
+      resource_name: "ZoneB"
+      nat_gateway:
+        subnet: "ZoneBPublicSubnet"
+      private_route_table:
+        name: "Zone B Private Subnets Route Table"
+      subnets:
+        - cidr: "10.0.32.0/20"
+          name: "Zone B Public Subnet"
+          public: true
+          resource_name: "ZoneBPublicSubnet"
+        - cidr: "10.0.48.0/20"
+          name: "Zone B Private Subnet"
+          public: false
+          resource_name: "ZoneBPrivateSubnet"

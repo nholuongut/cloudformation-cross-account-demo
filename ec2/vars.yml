@@ -1,0 +1,31 @@
+---
+region: "us-east-2"
+vpc_id: "vpc-1234"
+subnets:
+  - "subnet-a"
+  - "subnet-b"
+loadbalancer:
+  name: "lb-test"
+  scheme: "internet-facing"
+  ip_address_type: "ipv4"
+  security_group:
+    name: "securitygroup-loadbalancer"
+    description: "Public HTTP/S Access"
+    ingress:
+      - protocol: "tcp"
+        from_port: 80
+        to_port: 80
+        cidr: "0.0.0.0/0"
+      - protocol: "tcp"
+        from_port: 443
+        to_port: 443
+        cidr: "0.0.0.0/0"
+instances:
+  count: 1
+  type: "t2.micro"
+  image_id: "ami-007e9fbe81cfbf4fa"
+  key_name: "default"
+  protocol: "tcp"
+  ports:
+    - 80
+    - 443

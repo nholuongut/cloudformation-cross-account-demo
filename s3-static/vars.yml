@@ -1,0 +1,5 @@
+---
+host: "example.com"
+description: "Example Host"
+error_document: "error.html"
+index_document: "index.html"

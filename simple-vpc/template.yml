@@ -1,0 +1,124 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Resources:
+  VPC:
+    Type: "AWS::EC2::VPC"
+    Properties:
+      CidrBlock: "{{ vpc.cidr }}"
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      InstanceTenancy: "default"
+      Tags:
+       - Key: "Name"
+         Value: "{{ vpc.name }}"
+
+  # Create Internet Gateway for all public subnets in this VPC
+  InternetGateway:
+    Type: "AWS::EC2::InternetGateway"
+  VPCGatewayAttachment:
+    Type: "AWS::EC2::VPCGatewayAttachment"
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+  RouteTable:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId: !Ref VPC
+  InternetRoute:
+    Type: "AWS::EC2::Route"
+    Properties:
+      DestinationCidrBlock: "0.0.0.0/0"
+      GatewayId: !Ref InternetGateway
+      RouteTableId: !Ref RouteTable
+
+{%- for az in vpc.availability_zones %}
+
+  # ----- {{ az.resource_name }} -----
+
+  # Subnets
+{%- for subnet in az.subnets %}
+  {{ subnet.resource_name }}:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      AvailabilityZone: "{{ az.name }}"
+      VpcId: !Ref VPC
+      CidrBlock: "{{ subnet.cidr }}"
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: "Name"
+          Value: "{{ subnet.name }}"
+
+  {{ subnet.resource_name }}Association:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      RouteTableId: !Ref RouteTable
+      SubnetId: !Ref {{ subnet.resource_name }}
+{%- endfor %}
+
+{%- endfor %}
+
+
+  # Some default security groups to allow SSH and HTTP/S access
+  PrivateSSHSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupName: "Private SSH"
+      GroupDescription: "SSH from within VPC"
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: "{{ vpc.cidr }}"
+  PrivateHTTPSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupName: "Private HTTPS"
+      GroupDescription: "Private HTTP/S Traffic from within VPC"
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        CidrIp: "{{ vpc.cidr }}"
+      - IpProtocol: tcp
+        FromPort: 443
+        ToPort: 443
+        CidrIp: "{{ vpc.cidr }}"
+  PublicHTTPSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupName: "Public HTTPS"
+      GroupDescription: "Public HTTP/S Access"
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        CidrIp: "0.0.0.0/0"
+      - IpProtocol: tcp
+        FromPort: 443
+        ToPort: 443
+        CidrIp: "0.0.0.0/0"
+
+Outputs:
+  VpcId:
+    Description: VPC Id
+    Value: !Ref VPC
+  SubnetIds:
+    Description: List of Subnet Ids
+    Value: !Join
+      - ','
+      - {%- for az in vpc.availability_zones %}
+        {%- for subnet in az.subnets %}
+        - !Ref {{ subnet.resource_name }}
+        {%- endfor %}
+        {%- endfor %}
+  PrivateHTTPSecurityGroupId:
+    Description: Security Group Id for Private HTTP/S
+    Value: !Ref PrivateHTTPSecurityGroup
+  PublicHTTPSecurityGroupId:
+    Description: Security Group Id for Public HTTP/S
+    Value: !Ref PublicHTTPSecurityGroup
+  PrivateSSHSecurityGroupId:
+    Description: Security Group Id for SSH access from within VPC
+    Value: !Ref PrivateSSHSecurityGroup

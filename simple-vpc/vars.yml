@@ -1,0 +1,18 @@
+---
+region: "us-east-2"
+vpc:
+  name: "SimpleVPC"
+  cidr: "10.0.0.0/16"
+  availability_zones:
+    - name: "us-east-2a"
+      resource_name: "ZoneA"
+      subnets:
+      - cidr: "10.0.0.0/20"
+        name: "Zone A Subnet"
+        resource_name: "ZoneASubnet"
+    - name: "us-east-2b"
+      resource_name: "ZoneB"
+      subnets:
+        - cidr: "10.0.16.0/20"
+          name: "Zone B Subnet"
+          resource_name: "ZoneBSubnet"

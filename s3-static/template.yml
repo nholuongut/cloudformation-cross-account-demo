@@ -1,0 +1,66 @@
+# Create a static website hosted on S3 with https using Cloudfront and AWS SSL Cert
+
+AWSTemplateFormatVersion: "2010-09-09"
+Resources:
+  MainBucket:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      AccessControl: "PublicRead"
+      BucketName: "{{ host }}"
+      LoggingConfiguration:
+        DestinationBucketName: "logs.{{ host }}"
+      WebsiteConfiguration:
+        ErrorDocument: "{{ error_document }}"
+        IndexDocument: "{{ index_document }}"
+      Tags:
+        - Key: "Domain"
+          Value: "{{ host }}"
+
+  LogBucket:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      BucketName: "logs.{{ host }}"
+      Tags:
+        - Key: "Domain"
+          Value: "{{ host }}"
+
+  WWWBucket:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      BucketName: "www.{{ host }}"
+      WebsiteConfiguration:
+        RedirectAllRequestsTo:
+          HostName: "{{ host }}"
+      Tags:
+        - Key: "Domain"
+          Value: "{{ host }}"
+
+  MainBucketPolicy:
+    Type: "AWS::S3::BucketPolicy"
+    Properties:
+      Bucket: "{{ host }}"
+      PolicyDocument: |
+        {
+          "Version": "2008-10-17",
+          "Statement": [
+            {
+              "Sid": "AddPerm",
+              "Effect": "Allow",
+              "Principal": "*",
+              "Action": "s3:GetObject",
+              "Resource": "arn:aws:s3:::{{ host }}/*"
+            }
+          ]
+       }
+      Tags:
+        - Key: "Domain"
+          Value: "{{ host }}"
+
+  CloudFront:
+    Type: "AWS::CloudFront::Distribution"
+    Properties:
+      DistributionConfig:
+        Enabled: true
+      Tags:
+        - Key: "Domain"
+          Value: "{{ host }}"

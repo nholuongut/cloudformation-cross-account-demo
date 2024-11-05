@@ -1,0 +1,64 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Resources:
+  SGLoadBalancer:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      VpcId: "{{ vpc_id }}"
+      GroupName: "{{ loadbalancer.security_group.name }}"
+      GroupDescription: "{{ loadbalancer.security_group.description }}"
+      SecurityGroupIngress:
+      {%- for in in loadbalancer.security_group.ingress %}
+      - IpProtocol: {{ in.protocol }}
+        FromPort: {{ in.from_port }}
+        ToPort: {{ in.to_port }}
+        CidrIp: {{ in.cidr }}
+      {%- endfor %}
+      Tags:
+        - Key: "Name"
+          Value: "{{ loadbalancer.name }}-sg"
+
+  SGInstance:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      VpcId: "{{ vpc_id }}"
+      GroupName: "instance-sg"
+      GroupDescription: "Access from LoadBalancer"
+      SecurityGroupIngress:
+      {%- for port in instances.ports %}
+      - IpProtocol: {{ instances.protocol }}
+        FromPort: {{ port }}
+        ToPort: {{ port }}
+        SourceSecurityGroupId: !GetAtt SGLoadBalancer.GroupId
+      {%- endfor %}
+
+{%- for subnet in subnets %}
+{%- set j = loop.index0 %}
+{%- for x in range(0, instances.count) %}
+
+  Instance{{ j*instances.count + x }}:
+    Type: "AWS::EC2::Instance"
+    Properties:
+      InstanceType: "{{ instances.type }}"
+      ImageId: "{{ instances.image_id }}"
+      KeyName: "{{ instances.key_name }}"
+      SubnetId: "{{ subnet }}"
+      SecurityGroupIds:
+        - !Ref SGInstance
+      Tags:
+        - Key: "Subnet"
+          Value: "{{ subnet }}"
+
+{%- endfor %}
+{%- endfor %}
+
+
+Outputs:
+{%- for subnet in subnets %}
+{%- set j = loop.index0 %}
+{%- for x in range(0, instances.count) %}
+  {%- set iid = j*instances.count + x %}
+  Instance{{ iid }}:
+    Description: "Instance #{{ iid }}"
+    Value: !Ref Instance{{ iid }}
+{%- endfor %}
+{%- endfor %}

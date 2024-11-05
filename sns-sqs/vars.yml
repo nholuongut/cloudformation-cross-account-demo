@@ -1,0 +1,34 @@
+---
+sns_sqs:
+  queues:
+    - fifo_queue: true
+      message_retention_period: 1209600
+      queue_name: "Queue1.fifo"
+      resource_name: "Queue1"
+      visibility_timeout: 20
+    - fifo_queue: false
+      message_retention_period: 1209600
+      queue_name: "Queue2"
+      resource_name: "Queue2"
+      visibility_timeout: 20
+    - fifo_queue: true
+      message_retention_period: 1209600
+      queue_name: "Queue3.fifo"
+      resource_name: "Queue3"
+      visibility_timeout: 3600
+  topics:
+    - display_name: "SomeTopic"
+      resource_name: "SomeTopic"
+      subscriptions:
+        - endpoint: '!GetAtt [ Queue1, "Arn" ]'
+          protocol: sqs
+        - endpoint: '!GetAtt [ Queue2, "Arn" ]'
+          protocol: sqs
+    - display_name: "AnotherTopic"
+      resource_name: "AnotherTopic"
+      subscriptions:
+        - endpoint: '!GetAtt [ Queue1, "Arn" ]'
+          protocol: sqs
+        - endpoint: '!GetAtt [ Queue3, "Arn" ]'
+          protocol: sqs
+          
